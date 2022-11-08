@@ -1,0 +1,378 @@
+---
+title: "MA575 Project"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r 1}
+
+library(readxl)
+US <- read_excel("US oil price.xlsx")
+US
+```
+```{r 2}
+library(readxl)
+Europe<- read_excel("Europe oil price.xlsx")
+Europe
+```
+
+Part1 A. Hypothesis test for mean
+Population: Daily U.S crude oil price from 1978 to 2022.
+
+Alpha: 0.1 (so that both tail was 5%)
+
+Data set: Monthly U.S crude oil price from 1978 to 2022.( I choose every 15th day in a month to obtain the monthly U.S crude oil price) https://www.eia.gov/dnav/pet/hist/RWTCD.htm
+
+Claim: I believe the average U.S crude oil price per barrel is 84 dollars(I thought the average petroleum price is about 2.5 dollars per gallon from 1978 to 2022. And by deducting the government tax from it which is 50 cents, then the average price is about 2 dollars per gallon. As a barrel is 42 gallons, so I estimate the average U.S crude oil price per barrel is about 84 dollars)
+
+whether or not the sample data could be biased?
+I take the oil price on every 15th day of a month to conduct the data set while the oil price on 15th day of a month may not fully represent the oil price of that month. So it may be biased. 
+
+H0: mu = 84
+Ha: mu != 84
+mu represents for the mean of monthly US oil price from May 1987 to Feb 2022.
+
+
+```{r hypothesis test mu}
+#part1 A
+US_oil_price <- US$`US oil price (Dollars per Barrel)`
+Europe_oil_price <- Europe$`Europe oil price (Dollars per Barrel)`
+
+alpha <-0.10
+n=length(US_oil_price)
+#v=df
+v=n-1
+sx = sd(US_oil_price)
+xbar=mean(US_oil_price)
+tcrit<- qt(alpha/2, df=n-1, lower.tail=FALSE)
+
+SE<- sx/sqrt(n)
+
+#margin of error
+eps<- tcrit*SE
+
+#claimed value of the mean
+mu0<-84
+
+#confidence interval
+CIL <- xbar-eps
+CIU <- xbar+eps
+
+#Test Statistics
+tstat <- (xbar-mu0)/SE
+
+#p-value
+pval <- 2*pt(-abs(tstat),df=n-1,lower.tail = TRUE)
+
+#data frame summary
+metric_name=c("CI.lower","CI.upper","Claimed value",
+              "Test Statistics", "T critical value",
+              "p-value","alpha")
+
+metric_val=c(xbar-eps, xbar+eps, mu0,
+             tstat, tcrit, pval, alpha)
+
+
+datasummary <- data.frame(metric_name,metric_val)
+datasummary
+```
+From the result, we know that the p-value is very small and it is way smaller than the alpha value 0.1. So we reject the null hypothesis and conclude that the mean of monthly U.S crude oil price is not equal to 84 dollars per barrel. This is not correspondent to the claim I made before. 
+
+Part1 B. Hypothesis test for sigma
+Population: Daily U.S crude oil price from 1978 to 2022.
+
+Alpha: 0.1 (so that both tail was 5%)
+
+Data set: Monthly U.S crude oil price from 1978 to 2022.( I choose every 15th day in a month to obtain the monthly U.S crude oil price)
+
+Claim:I believe the standard deviation of crude oil price of the U.S per barrel is 20 dollars.(I thought intuitively that the standard deviation of crude oil price is about 20 dollars.)
+
+H0: sigma = 20
+Ha: sigma != 20
+```{r hypothesis test sd}
+#Part1 B
+sig0 <- 20
+#chi-square
+cstat <- ((n-1)*sx^2/sig0^2)
+cstat
+
+ccriticL <- qchisq(alpha/2,df = v,lower.tail = T)
+ccriticU <- qchisq(alpha/2,df = v,lower.tail = F)
+
+C_pval <- 2*pchisq(cstat, df = v, lower.tail = F)
+
+metric_name=c("CI.lower","CI.upper","Claimed value",
+              "Test Statistics",
+              "p-value","alpha")
+
+metric_val=c(ccriticL, ccriticU, sig0,
+             cstat, C_pval, alpha)
+
+
+datasummary <- data.frame(metric_name,metric_val)
+datasummary
+```
+In the result, we can see that the test statistics is not within the confidence interval range with alpha = 0.1. So we reject the null hypothesis and conclude that the standard deviation of monthly U.S crude oil price is not equal to 20 dollars per barrel. My claim is not correct.
+
+
+Part1 C.Normal QQ plots for both data sets
+
+Claim: I believe the crude oil price of the U.S per barrel is normally distributed
+       I believe the crude oil price of Europe per barrel is normally distributed
+
+```{r NQQ plots}
+#Part1 C
+#US NQQ plots
+boxplot(US_oil_price,horizontal = T, col="orange",
+        main = "Box plot of Monthly crude oil price in US")
+
+Q_US <- qqnorm(US_oil_price)
+
+qqline(US_oil_price, col = "pink",lwd = 4)
+
+rnqq_US <- cor(Q_US$x,Q_US$y)
+rnqq_US
+
+#Europe NQQ plots
+boxplot(Europe_oil_price,horizontal = T, col="blue",
+        main = "Box plot of Monthly crude oil price in Europe")
+
+Q_Europe <- qqnorm(Europe_oil_price)
+
+qqline(Europe_oil_price,col = "red", lwd = 4)
+
+rnqq_Europe <- cor(Q_Europe$x, Q_Europe$y)
+rnqq_Europe
+```
+From both data set's QQ plot,since the correlation for both QQ plot is 0.94, we can see that data points are approximately fall along the line. Thus, we can conclude that both monthly U.S crude oil price and monthly Europe crude oil price is normally distributed which is correspondent to what we assumed in our claim stated before. 
+
+Part1 D. Hypothesis test for mean of two data sets
+
+Claim:I believe there is not a significant difference in the average crude oil price of the U.S compared to the average crude oil price of Europe.
+
+H0: mu1 = mu2
+Ha: mu1 != mu2
+
+```{r hypothesis test for two means}
+#Part1 D
+
+xbar1 <- mean(US_oil_price)
+
+xbar2 <- mean(Europe_oil_price)
+
+med1 <- median(US_oil_price)
+
+med2 <- median(Europe_oil_price)
+  
+sd1 <- sd(US_oil_price)
+
+sd2 <- sd(Europe_oil_price)
+
+n1 <- length(US_oil_price)
+
+n2 <- length(Europe_oil_price)
+
+alpha_mean <- 0.1
+
+SxD <- Europe_oil_price - US_oil_price
+
+xbarD <- mean(SxD)
+
+sdD <- sd(SxD)
+
+n <- n1
+
+SE_mean <- sdD/sqrt(n)
+
+tcrit <- qt(alpha_mean/2,df = n-1, lower.tail = F)
+
+meps1 <- tcrit * SE_mean
+
+tstat_mean <- (xbarD - 0)/SE_mean
+
+pval_mean <- 2*pt(-abs(tstat_mean),df = n-1)
+
+metric_name = c("CI.lower","CI.upper","Test Statistics",
+              "T-critical value", "p-value","alpha")
+
+metric_val_mean <- c(xbarD-meps1,xbarD+meps1, tstat_mean,tcrit, pval_mean,alpha_mean)
+
+datasummary <- data.frame(metric_name,metric_val_mean)
+datasummary
+```
+From the result, the test statistics does not fall into the confidence interval region and the p value is very small. So we reject the null hypothesis and conclude that there is significant difference between the mean of monthly crude oil price in U.S compared to the mean of monthly crude oil price in Europe which is not correspondent to our claim before.
+
+Part1 E. Homoscedasticity
+
+Claim: I believe that the population of the U.S and Europe are homoscedastic to one another in terms of their crude oil price
+
+H0:sigma1^2 = sigma2^2
+Ha:sigma1^2 != sigma2^2
+
+```{r homoscedasticity}
+#Part1 E
+alpha_homo <- 0.1
+
+fstat <- sd1^2/sd2^2
+
+fcritL <- qf(alpha_homo/2, df1 = n1 -1, df2 = n2-1, lower.tail = T)
+fcritU <- qf(alpha_homo/2, df1 = n1 -1, df2 = n2-1, lower.tail = F)
+
+fstatL <- min(fstat, 1/fstat)
+fstatR <- max(fstat,1/fstat)
+
+pval_homo <- pf(fstatL, df1 = n1-1, df2 = n2-1, lower.tail = T ) + pf(fstatR, df1 = n1-1, df2 = n2-1, lower.tail = F)
+
+metric_name_homo <- c("CI_lower","CI_Upper", "FstatL","FstatU","FcritL","FcritU","pval","alpha")
+
+metric_val_homo <- c(fcritL*fstat, fcritU*fstat, fstatL, fstatR, fcritL, fcritU, pval_homo, alpha_homo)
+
+data_summary_homo <- data.frame(metric_name_homo, metric_val_homo)
+data_summary_homo
+```
+From the result above, we can see the pvalue is 0.021 which is slightly smaller than the alpha value 0.1. So we reject the hypothesis test and conclude that the population of the U.S and Europe are not homoscedastic to one another in terms of their monthly crude oil price.
+
+Part2 A Simple Linear regression
+
+Response Variable: Average Retail Gasoline Price in California from 1999-2022 (Weekly)
+Explanatory Variable: Average US Crude Oil Price from 1999-2022 (Weekly)
+
+Claim: I believe the average retail gasoline price in california is linearly related to average us crude oil price since the gasoline is produced from crude oil. 
+
+
+```{r part2}
+library(readxl)
+average_retail_price_in_Cali <- read_excel("~/Desktop/MA575/MA575 Project/MA575 project/average retail price in Cali.xlsx")
+average_retail_price_in_Cali
+source("nemolm2.R")
+```
+```{r part2 A}
+x <- average_retail_price_in_Cali$`Average US Crude oil price`
+y <- average_retail_price_in_Cali$`Average Retail prices`
+#scatter plot
+plot(x, y, main = "Scatter plot of Average Gasoline retail price in Cali and Average U.S crude oil price",
+     xlab = "Average U.S crude oil price", ylab = "Average Gasoline retail price in Cali",
+     pch = 10, frame = FALSE)
+#standard residuals plot
+SLR <- nemolm2(y,x)
+plot(SLR$predicted,SLR$std.residual,main = "Standard residual plot")
+abline(0,0)
+#table for the model parameters, standard errors, Rsquare adjusted, Rsquare and pvalue
+metric_name_SLR <- c("Slope","Intercept","SE of Slope","SE of Intercept","R square adjusted","R square","p-value")
+metric_val_SLR <- c(SLR$betahat[2],SLR$betahat[1],SLR$SEbetahat[2],SLR$SEbetahat[1],SLR$r2adj,SLR$r2,SLR$pval)
+data_summary_SLR <- data.frame(metric_name_SLR, metric_val_SLR)
+data_summary_SLR
+```
+Part2 A. Simple linear regression
+As showed in the data summary, the model is Average Gasoline retail price in Cali = 0.0285* Average US crude oil price + 1.2035.
+Both R square and R square adjusted is 0.717 which indicates the model have strong positive relationship.
+The p value equals to 0 suggests that the null hypothesis is rejected and the model is statistically significant.
+By using this SLR model, we can predicted the average gasoline retail price in Cali by using the Average US crude oil price.
+The model means for every dollar increase in Average US crude oil price, there will be 0.0285 dollar increase in average gasoline retail price in cali.
+
+Part2 B. Simple Quadratic Regression
+Claim: I believe the average gasoline retail price in cali is not quadratically related to the average Europe crude oil price since the gasoline price in cali seems no relationship with the average Europe crude oil price.
+```{r part2 B}
+X <- average_retail_price_in_Cali$`Average Europe Crude oil price`
+SQR <- nemolm2(y,cbind(X,X^2))
+#standard residuals plot
+plot(SQR$predicted,SQR$std.residual,main = "Standard residual plot")
+abline(0,0)
+#table for the model parameters, standard errors, Rsquare adjusted, Rsquare and pvalue
+metric_name_SQR <- c("Slope of X","Slope of X^2","Intercept","SE of Slope of X","SE of Slope of X^2","SE of Intercept","R square adjusted","R square","p-value")
+metric_val_SQR <- c(SQR$betahat[2],SQR$betahat[3],SQR$betahat[1],SQR$SEbetahat[2],SQR$SEbetahat[3],SQR$SEbetahat[1],SQR$r2adj,SQR$r2,SLR$pval)
+data_summary_SQR <- data.frame(metric_name_SQR, metric_val_SQR)
+data_summary_SQR
+```
+As showed in the data summary, the model is Average Gasoline retail price in Cali = 0.0553* Average Europe crude oil price - 0.000216*Average Europe crude oil price^2 + 0.494.
+Both R square and R square adjusted is around 0.813 which indicates the model have strong positive relationship.
+The p value equals to 0 suggests that the null hypothesis is rejected and the model is statistically significant.
+This is to say our claim is incorrect. By using this SQR model, we can predicted the average gasoline retail price in Cali by using the Average Europe crude oil price. Since the r square is smaller, we prefer using the SQR model over the SLR model.
+
+Part3 Multiple Linear Regression
+
+Response Variable: Average Retail Gasoline Price in California from 1999-2022 (Weekly)
+X1: Average US Crude Oil Price from 1999-2022 (Weekly)
+X2: Refinery Costs and Profits in Cali (weekly)
+X3: Distribution Costs, Marketing Costs, and Profits in Cali(weekly)
+
+Claim: I believe all of the variables are good predictors of response variable
+```{r Part3}
+X1 <- average_retail_price_in_Cali$`Average US Crude oil price`
+X2 <- average_retail_price_in_Cali$`Refinery Costs and Profits`
+X3 <- average_retail_price_in_Cali$`Distribution Costs, Marketing Costs, and Profits`
+MLR <- nemolm2(y,cbind(X1,X2,X3))
+#ANOVA table
+metric_name_ANOVA <- c("SST","SSE","SSM","MST","MSE","MSM","Fstat","p-value")
+metric_val_ANOVA <- c(MLR$sst,MLR$sse,MLR$ssm,MLR$mst,MLR$mse,MLR$msm,MLR$Fstat,MLR$pval)
+data_summary_ANOVA <- data.frame(metric_name_ANOVA, metric_val_ANOVA)
+data_summary_ANOVA
+#Variance Inflation factors
+MYv12 <- nemolm2(y, cbind(X1, X2))
+MYv13 <- nemolm2(y, cbind(X1, X3))
+MYv23 <- nemolm2(y, cbind(X2, X3))
+M1v23 <- nemolm2(X1, cbind(X2, X3))
+M2v13 <- nemolm2(X2, cbind(X1, X3))
+M3v12 <- nemolm2(X3, cbind(X1,X2))
+
+vif1 <- 1/(1-MYv23$r2)
+vif2 <- 1/(1-MYv12$r2)
+vif3 <- 1/(1-MYv12$r2)
+
+vif <- c(vif1, vif2, vif3)
+
+barplot(vif, horiz=T,
+        main='variance inflation factor',
+        names.arg=c('X1','X2','X3'),
+        xlim=c(0,30))
+#Added variable plot
+#AVP for X1
+plot(MYv23$std.residual,M1v23$std.residual,
+     main = "added variable plot for X1",
+     xlab = "s. residual for Y~X2 X3",
+     ylab = "s. residual for X1~ X2 X3")
+abline(0,0,lwd=2)
+
+m1 <- cor(MYv23$std.residual,M1v23$std.residual)*sd(M1v23$std.residual)/sd(MYv23$std.residual)
+abline(mean(MYv23$std.residual)-m1*mean(M1v23$std.residual),m1,
+       col="red",lwd=2)
+#AVP for X2
+plot(MYv13$std.residual, M2v13$std.residual,
+     main='Added Variable Plot for X2',
+     xlab='s.residual for Y~ X1 X3', ylab='s. Residual for X2~ X1 X3')
+abline(0,0,lwd=2)
+
+m2<-cor(MYv13$std.residual, M2v13$std.residual)*sd(M2v13$std.residual/sd(MYv13$std.residual))
+abline(mean(MYv13$std.residual)-m2*mean(M2v13$std.residual),m2,
+       col="yellow",lwd=2)
+#AVP for X3
+plot(MYv12$std.residual, M3v12$std.residual,
+     main='Added Variable Plot for X3',
+     xlab='s.residual for Y~ X1,X2', ylab='s. Residual for X3~ X1,X2')
+abline(0,0,lwd=2)
+
+m3<-cor(MYv12$std.residual, M3v12$std.residual)*sd(M3v12$std.residual/sd(MYv12$std.residual))
+abline(mean(MYv12$std.residual)-m3*mean(M3v12$std.residual),m3,
+       col="pink",lwd=2)
+
+#standard residuals plot
+plot(X1,SLR$std.residual,main = "Standard residual plot")
+
+#correlation matrix between Y and all three variables
+cor(cbind(y,X1,X2,X3))
+
+```
+From the added variable plots for each variable, we can see that all the variables have a significant slope. So we conclude that all of the variables are significant in the model.
+Considering the variance inflation factors with a value-5 threshold, we can see that X1 is good for the threshold while X2 X3 are larger than 5. So we conclude that X2 X3 have multicolinearity. 
+By looking at the standardized residuals plot, we can see a not random trend which indicates non-constant variance.
+
+The model we conducted in MLR: 
+Average Retail Gasoline Price in California = 0.2294 + 0.0286*Average US Crude Oil Price + 1.0536*Refinery Costs and Profits in Cali + 1.4618*Distribution Costs, Marketing Costs, and Profits in Cali
+
+This means a dollar increase in Average US crude oil price can lead to 0.0286 dollar increase in Average retail gasoline price, a dollar increase in refinery costs and profits in california can lead to 1.0536 dollar increase in Average retail gasoline price, a dollar increase in Distribution Costs, Marketing Costs, and Profits in California can lead to 1.4618 dollar increase in Average retail gasoline price.
+
+For example, if we have Average US Crude Oil Price = 14dollars, Refinery Costs and Profits in Cali= 0.4 dollar,and Distribution Costs, Marketing Costs, and Profits in Cali = 0.3 dollar, then 
+the average retail gasoline price in california = 0.2294 + 0.0286*2 + 0.4*1.0536 + 1.4618*0.3 = 0.42144 +0.43854 +0.4004 +0.2294 = 1.49 dollar
